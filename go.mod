@@ -1,4 +1,4 @@
-module cargo_avto_update
+module module github.com/marketconnect/cargo_avto_update
 
 go 1.23
 
