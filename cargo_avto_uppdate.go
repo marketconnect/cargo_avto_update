@@ -33,9 +33,9 @@ type Config struct {
 	PVZ               int     // PVZ (for example, 15)
 	DBName            string  // DBName (for example, "ue.db")
 	VendorCodePattern string  // VendorCodePattern (for example, "^box_\d+_\d+$")
+	UsePcs            bool    // UsePcs (for example, true)
 }
 
-// Process запускает весь процесс обработки, используя переданный apiKey и конфигурацию.
 func Process(apiKey string, cfg Config) error {
 	// 1. Получаем тарифы FBS
 	base, liter, err := getFBSTariffs(apiKey)
@@ -116,13 +116,12 @@ func Process(apiKey string, cfg Config) error {
 		}
 		productID := parts[1]
 		pcsInt := 1
-		if len(parts) > 2 {
+		if len(parts) > 2 && cfg.UsePcs {
 			if val, err := strconv.Atoi(parts[2]); err == nil {
 				pcsInt = val
 			}
 		}
 
-		// Получаем цены с Wildberries
 		var (
 			wbPrice           float64
 			wbDiscountedPrice float64
