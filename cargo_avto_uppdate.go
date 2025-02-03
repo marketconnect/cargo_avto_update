@@ -164,10 +164,12 @@ func Process(apiKey string, cfg Config) error {
 		// Рассчитываем тариф
 		volumeInLiters := CalculateVolumeLiters(card.Dimensions.Width, card.Dimensions.Height, card.Dimensions.Length)
 		tariff := CalculateTariff(volumeInLiters, base, liter)
+		fmt.Printf("volumeInLiters: %f, base: %f, liter: %f, tariff: %f\n", volumeInLiters, base, liter, tariff)
 
 		// Рассчитываем комиссию (используем clubDiscountPrice)
 		returns := (tariff + 50) / 9
 		fixedCosts := cost + int(math.Ceil(tariff)) + cfg.Delivery + cfg.PVZ + int(math.Ceil(returns))
+		fmt.Printf("fixedCosts: %d (cost: %d, tariff: %f, delivery: %d, pvz: %d, returns: %f)\n", fixedCosts, cost, tariff, cfg.Delivery, cfg.PVZ, returns)
 		comNum := (float64(commissionRate) + 1) / 100
 		okPrice, err := CalcPrice(cfg.DesiredMargin, cfg.TaxRate, comNum, float64(fixedCosts))
 		if err != nil {
