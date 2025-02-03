@@ -362,6 +362,9 @@ func getProductPrices(apiKey string, limit, offset int, filterNmID int64) ([]Pro
 }
 
 func CalculateTariff(volumeLiters float64, boxDeliveryBase, boxDeliveryLiter float64) float64 {
+	if volumeLiters <= 1 {
+		return boxDeliveryBase
+	}
 	return (volumeLiters-1)*boxDeliveryLiter + boxDeliveryBase
 }
 
