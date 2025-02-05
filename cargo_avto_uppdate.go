@@ -122,22 +122,6 @@ func Process(apiKey string, cfg Config) error {
 			}
 		}
 
-		var (
-			wbPrice           float64
-			wbDiscountedPrice float64
-			wbClubDiscounted  float64
-		)
-		// for _, p := range prices {
-		// 	if p.VendorCode == card.VendorCode {
-		// 		if len(p.Sizes) > 0 {
-		// 			wbPrice = p.Sizes[0].Price
-		// 			wbDiscountedPrice = p.Sizes[0].DiscountedPrice
-		// 			wbClubDiscounted = p.Sizes[0].ClubDiscountedPrice
-		// 		}
-		// 		break
-		// 	}
-		// }
-
 		// Парсинг данных товара (с кешированием)
 		var productData map[string]string
 		if cachedData, exists := productDataCache[productID]; exists {
@@ -180,16 +164,14 @@ func Process(apiKey string, cfg Config) error {
 
 		// Сохраняем данные в базу
 		saveToDatabase(db, SaveParams{
-			NmID:              card.NmID,
-			VendorCode:        card.VendorCode,
-			Width:             card.Dimensions.Width,
-			Height:            card.Dimensions.Height,
-			Length:            card.Dimensions.Length,
-			Pcs:               pcsInt,
-			ProductID:         productID,
-			WbPrice:           wbPrice,
-			WbDiscountedPrice: wbDiscountedPrice,
-			WbClubDiscounted:  wbClubDiscounted,
+			NmID:       card.NmID,
+			VendorCode: card.VendorCode,
+			Width:      card.Dimensions.Width,
+			Height:     card.Dimensions.Height,
+			Length:     card.Dimensions.Length,
+			Pcs:        pcsInt,
+			ProductID:  productID,
+
 			AvailableCountStr: productData["availableCount"],
 			Cost:              cost,
 			// Tariff:            tariff,
@@ -547,17 +529,8 @@ func createTable(db *sql.DB) {
 		length INTEGER,
 		pcs INTEGER,
 		product_id TEXT,
-		skus TEXT,
-		price REAL,
-		discounted_price REAL,
-		club_discounted_price REAL,
 		available_count INTEGER,
 		cost INTEGER,
-		tariff REAL,
-		commission INTEGER,
-		ok_price REAL,
-		new_price INTEGER,
-		new_discount INTEGER,
 		UNIQUE (product_id, pcs)
 	);
 	`
@@ -574,18 +547,10 @@ type SaveParams struct {
 	VendorCode            string
 	Width, Height, Length int
 	Pcs                   int
-
-	ProductID string
-
-	WbPrice           float64
-	WbDiscountedPrice float64
-	WbClubDiscounted  float64
+	ProductID             string
 
 	AvailableCountStr string
 	Cost              int
-	Tariff            float64
-	Commission        int
-	OKPrice           float64
 }
 
 func saveToDatabase(db *sql.DB, params SaveParams, sku string) {
@@ -595,42 +560,26 @@ func saveToDatabase(db *sql.DB, params SaveParams, sku string) {
 		availableCount = 0
 	}
 
-	newPrice, newDiscount := calculateNewPriceAndDiscount(params.OKPrice)
-
 	query := `
 INSERT INTO products (
 	nm_id, vendor_code,
 	width, height, length,
-	pcs, product_id, skus,
-	price, discounted_price, club_discounted_price,
-	available_count, cost, tariff, commission, ok_price,
-	new_price, new_discount
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	pcs, product_id, available_count, cost
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(product_id, pcs) DO UPDATE SET
 	nm_id = excluded.nm_id,
 	vendor_code = excluded.vendor_code,
 	width = excluded.width,
 	height = excluded.height,
 	length = excluded.length,
-	price = excluded.price,
-	discounted_price = excluded.discounted_price,
-	club_discounted_price = excluded.club_discounted_price,
 	available_count = excluded.available_count,
-	cost = excluded.cost,
-	tariff = excluded.tariff,
-	commission = excluded.commission,
-	ok_price = excluded.ok_price,
-	new_price = excluded.new_price,
-	new_discount = excluded.new_discount,
-	skus = excluded.skus;
+	cost = excluded.cost;
 `
 	_, err = db.Exec(query,
 		params.NmID, params.VendorCode,
 		params.Width, params.Height, params.Length,
 		params.Pcs, params.ProductID, sku,
-		params.WbPrice, params.WbDiscountedPrice, params.WbClubDiscounted,
-		availableCount, params.Cost, params.Tariff, params.Commission, params.OKPrice,
-		newPrice, newDiscount,
+		availableCount, params.Cost,
 	)
 	if err != nil {
 		log.Printf("Ошибка при сохранении данных для %s: %v", params.ProductID, err)
