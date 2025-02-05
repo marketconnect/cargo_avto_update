@@ -26,14 +26,14 @@ const baseURL = "https://sp.cargo-avto.ru/catalog/"
 
 // Config содержит параметры для обработки.
 type Config struct {
-	ObjectIDs         []int   // SubjectIDs
-	DesiredMargin     float64 // DesiredMargin (for example, 0.3)
-	TaxRate           float64 // TaxRate (for example, 0.07)
-	Delivery          int     // Delivery (for example, 100)
-	PVZ               int     // PVZ (for example, 15)
-	DBName            string  // DBName (for example, "ue.db")
-	VendorCodePattern string  // VendorCodePattern (for example, "^box_\d+_\d+$")
-	UsePcs            bool    // UsePcs (for example, true)
+	ObjectIDs []int // SubjectIDs
+	// DesiredMargin     float64 // DesiredMargin (for example, 0.3)
+	// TaxRate           float64 // TaxRate (for example, 0.07)
+	// Delivery          int     // Delivery (for example, 100)
+	// PVZ               int     // PVZ (for example, 15)
+	DBName            string // DBName (for example, "ue.db")
+	VendorCodePattern string // VendorCodePattern (for example, "^box_\d+_\d+$")
+	UsePcs            bool   // UsePcs (for example, true)
 }
 
 func Process(apiKey string, cfg Config) error {
@@ -74,25 +74,25 @@ func Process(apiKey string, cfg Config) error {
 	defer ctxCancel()
 
 	// 5. Загружаем цены товаров
-	prices, err := getProductPrices(apiKey, 1000, 0, 0)
-	if err != nil {
-		log.Printf("Ошибка получения цен: %v", err)
-	}
+	// prices, err := getProductPrices(apiKey, 1000, 0, 0)
+	// if err != nil {
+	// 	log.Printf("Ошибка получения цен: %v", err)
+	// }
 
-	// 6. Загружаем комиссии
-	commissions, err := getCommission(apiKey)
-	if err != nil {
-		log.Printf("Ошибка получения комиссии: %v", err)
-	}
+	// // 6. Загружаем комиссии
+	// commissions, err := getCommission(apiKey)
+	// if err != nil {
+	// 	log.Printf("Ошибка получения комиссии: %v", err)
+	// }
 
 	// Ищем комиссию для subjectID=3979 (пример)
-	var commissionRate int
-	for _, c := range commissions {
-		if c.SubjectID == 3979 {
-			commissionRate = int(c.KgvpMarketplace)
-		}
-	}
-	log.Println("Комиссия:", commissionRate)
+	// var commissionRate int
+	// for _, c := range commissions {
+	// 	if c.SubjectID == 3979 {
+	// 		commissionRate = int(c.KgvpMarketplace)
+	// 	}
+	// }
+	// log.Println("Комиссия:", commissionRate)
 
 	productDataCache := make(map[string]map[string]string)
 	skuMap := extractSKUs(allCards)
@@ -127,16 +127,16 @@ func Process(apiKey string, cfg Config) error {
 			wbDiscountedPrice float64
 			wbClubDiscounted  float64
 		)
-		for _, p := range prices {
-			if p.VendorCode == card.VendorCode {
-				if len(p.Sizes) > 0 {
-					wbPrice = p.Sizes[0].Price
-					wbDiscountedPrice = p.Sizes[0].DiscountedPrice
-					wbClubDiscounted = p.Sizes[0].ClubDiscountedPrice
-				}
-				break
-			}
-		}
+		// for _, p := range prices {
+		// 	if p.VendorCode == card.VendorCode {
+		// 		if len(p.Sizes) > 0 {
+		// 			wbPrice = p.Sizes[0].Price
+		// 			wbDiscountedPrice = p.Sizes[0].DiscountedPrice
+		// 			wbClubDiscounted = p.Sizes[0].ClubDiscountedPrice
+		// 		}
+		// 		break
+		// 	}
+		// }
 
 		// Парсинг данных товара (с кешированием)
 		var productData map[string]string
@@ -167,16 +167,16 @@ func Process(apiKey string, cfg Config) error {
 		fmt.Printf("volumeInLiters: %f, base: %f, liter: %f, tariff: %f\n", volumeInLiters, base, liter, tariff)
 
 		// Рассчитываем комиссию (используем clubDiscountPrice)
-		returns := (tariff + 50) / 9
-		fixedCosts := cost + int(math.Ceil(tariff)) + cfg.Delivery + cfg.PVZ + int(math.Ceil(returns))
-		fmt.Printf("fixedCosts: %d (cost: %d, tariff: %f, delivery: %d, pvz: %d, returns: %f)\n", fixedCosts, cost, tariff, cfg.Delivery, cfg.PVZ, returns)
-		comNum := (float64(commissionRate) + 1) / 100
-		okPrice, err := CalcPrice(cfg.DesiredMargin, cfg.TaxRate, comNum, float64(fixedCosts))
-		if err != nil {
-			log.Printf("Ошибка при расчете цены: %v", err)
-			continue
-		}
-		commission := int(okPrice * comNum)
+		// returns := (tariff + 50) / 9
+		// fixedCosts := cost + int(math.Ceil(tariff)) + cfg.Delivery + cfg.PVZ + int(math.Ceil(returns))
+		// fmt.Printf("fixedCosts: %d (cost: %d, tariff: %f, delivery: %d, pvz: %d, returns: %f)\n", fixedCosts, cost, tariff, cfg.Delivery, cfg.PVZ, returns)
+		// comNum := (float64(commissionRate) + 1) / 100
+		// okPrice, err := CalcPrice(cfg.DesiredMargin, cfg.TaxRate, comNum, float64(fixedCosts))
+		// if err != nil {
+		// 	log.Printf("Ошибка при расчете цены: %v", err)
+		// 	continue
+		// }
+		// commission := int(okPrice * comNum)
 
 		// Сохраняем данные в базу
 		saveToDatabase(db, SaveParams{
@@ -192,9 +192,9 @@ func Process(apiKey string, cfg Config) error {
 			WbClubDiscounted:  wbClubDiscounted,
 			AvailableCountStr: productData["availableCount"],
 			Cost:              cost,
-			Tariff:            tariff,
-			Commission:        commission,
-			OKPrice:           okPrice,
+			// Tariff:            tariff,
+			// Commission:        commission,
+			// OKPrice:           okPrice,
 		}, skus[0])
 	}
 
@@ -302,18 +302,18 @@ type Dimensions struct {
 	IsValid bool `json:"isValid"`
 }
 
-type Size struct {
-	SizeID              int64   `json:"sizeID"`
-	Price               float64 `json:"price"`
-	DiscountedPrice     float64 `json:"discountedPrice"`
-	ClubDiscountedPrice float64 `json:"clubDiscountedPrice"`
-	TechSizeName        string  `json:"techSizeName"`
-}
+// type Size struct {
+// 	SizeID              int64   `json:"sizeID"`
+// 	Price               float64 `json:"price"`
+// 	DiscountedPrice     float64 `json:"discountedPrice"`
+// 	ClubDiscountedPrice float64 `json:"clubDiscountedPrice"`
+// 	TechSizeName        string  `json:"techSizeName"`
+// }
 
 type Product struct {
-	NmID              int64  `json:"nmID"`
-	VendorCode        string `json:"vendorCode"`
-	Sizes             []Size `json:"sizes"`
+	NmID       int64  `json:"nmID"`
+	VendorCode string `json:"vendorCode"`
+	// Sizes             []Size `json:"sizes"`
 	CurrencyIsoCode   string `json:"currencyIsoCode4217"`
 	Discount          int    `json:"discount"`
 	ClubDiscount      int    `json:"clubDiscount"`
@@ -373,48 +373,48 @@ func CalculateVolumeLiters(width, height, length int) float64 {
 	return volumeCm3 / 1000.0
 }
 
-type Commission struct {
-	KgvpMarketplace     float64 `json:"kgvpMarketplace"`
-	KgvpSupplier        float64 `json:"kgvpSupplier"`
-	KgvpSupplierExpress float64 `json:"kgvpSupplierExpress"`
-	PaidStorageKgvp     float64 `json:"paidStorageKgvp"`
-	ParentID            int     `json:"parentID"`
-	ParentName          string  `json:"parentName"`
-	SubjectID           int     `json:"subjectID"`
-	SubjectName         string  `json:"subjectName"`
-}
+// type Commission struct {
+// 	KgvpMarketplace     float64 `json:"kgvpMarketplace"`
+// 	KgvpSupplier        float64 `json:"kgvpSupplier"`
+// 	KgvpSupplierExpress float64 `json:"kgvpSupplierExpress"`
+// 	PaidStorageKgvp     float64 `json:"paidStorageKgvp"`
+// 	ParentID            int     `json:"parentID"`
+// 	ParentName          string  `json:"parentName"`
+// 	SubjectID           int     `json:"subjectID"`
+// 	SubjectName         string  `json:"subjectName"`
+// }
 
-type CommissionResponse struct {
-	Report []Commission `json:"report"`
-}
+// type CommissionResponse struct {
+// 	Report []Commission `json:"report"`
+// }
 
-func getCommission(apiKey string) ([]Commission, error) {
-	url := "https://common-api.wildberries.ru/api/v1/tariffs/commission"
-	client := &http.Client{Timeout: 10 * time.Second}
+// func getCommission(apiKey string) ([]Commission, error) {
+// 	url := "https://common-api.wildberries.ru/api/v1/tariffs/commission"
+// 	client := &http.Client{Timeout: 10 * time.Second}
 
-	req, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Authorization", apiKey)
+// 	req, err := http.NewRequest("GET", url, nil)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	req.Header.Set("Authorization", apiKey)
 
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
+// 	resp, err := client.Do(req)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
+// 	body, err := ioutil.ReadAll(resp.Body)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	var response CommissionResponse
-	if err := json.Unmarshal(body, &response); err != nil {
-		return nil, err
-	}
-	return response.Report, nil
-}
+// 	var response CommissionResponse
+// 	if err := json.Unmarshal(body, &response); err != nil {
+// 		return nil, err
+// 	}
+// 	return response.Report, nil
+// }
 
 func getCardsList(apiKey string, updatedAt string, nmID int, objectIDs []int) (*CardsListResponse, error) {
 	url := "https://content-api.wildberries.ru/content/v2/get/cards/list"
